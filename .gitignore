@@ -1,0 +1,20 @@
+# Secrets — never commit real keys
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Vector database (regenerated at runtime; don't version large binary data)
+hotel_vector_db_langchain/
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/

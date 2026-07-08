@@ -1,0 +1,20 @@
+# Never bake secrets into the image
+.env
+
+# Local dev / VCS clutter not needed inside the container
+.git/
+.gitignore
+__pycache__/
+*.pyc
+.venv/
+venv/
+.vscode/
+.idea/
+.DS_Store
+
+# Vector DB is rebuilt at runtime — no need to copy any local copy in
+hotel_vector_db_langchain/
+
+# Docs not needed at runtime
+README.md
+.env.example

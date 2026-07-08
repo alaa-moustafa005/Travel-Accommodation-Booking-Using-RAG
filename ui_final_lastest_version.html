@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safari — AI Stay Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16243a;
+    --ink-soft:#3c4e64;
+    --parchment:#f7f2e8;
+    --parchment-deep:#efe7d6;
+    --navy:#16324f;
+    --navy-deep:#0e2235;
+    --brass:#c99a3d;
+    --brass-soft:#e3c587;
+    --teal:#2f6f6b;
+    --teal-soft:#dcebe9;
+    --coral:#c75a43;
+    --coral-soft:#f4ddd6;
+    --line:#d9cdb0;
+    --card:#fffdf7;
+    --shadow: 0 18px 40px -22px rgba(22,36,58,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--parchment);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--brass-soft);}
+
+  .app{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    height:100vh;
+    min-height:560px;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar{
+    background:var(--navy);
+    color:#f3ead7;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden;
+  }
+  .sidebar::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(201,154,61,0.10), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(47,111,107,0.18), transparent 45%);
+    pointer-events:none;
+  }
+  .brand{
+    padding:30px 26px 22px;
+    border-bottom:1px solid rgba(243,234,215,0.12);
+    position:relative;
+  }
+  .brand-mark{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces',serif;
+    font-size:23px;
+    font-weight:600;
+    letter-spacing:0.2px;
+  }
+  .brand-mark svg{flex:none;}
+  .brand-sub{
+    margin-top:6px;
+    font-size:11.5px;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--brass-soft);
+    font-weight:600;
+  }
+
+  .log-header{
+    padding:20px 26px 8px;
+    font-size:11px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:rgba(243,234,215,0.55);
+    font-weight:600;
+    position:relative;
+  }
+  .stub-list{
+    flex:1;
+    overflow-y:auto;
+    padding:6px 18px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    position:relative;
+  }
+  .stub-empty{
+    margin:14px 8px;
+    font-size:12.5px;
+    line-height:1.6;
+    color:rgba(243,234,215,0.45);
+  }
+  .stub{
+    background:rgba(243,234,215,0.05);
+    border:1px solid rgba(243,234,215,0.14);
+    border-radius:10px;
+    padding:11px 14px;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .stub:hover{
+    background:rgba(243,234,215,0.1);
+    border-color:rgba(201,154,61,0.5);
+    transform:translateX(2px);
+  }
+  .stub-top{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .stub-city{
+    font-size:14px; font-weight:600; letter-spacing:0.4px;
+    color:#fdf8ec;
+  }
+  .stub-code{
+    font-size:11px; color:var(--brass-soft); letter-spacing:1px;
+  }
+  .stub-meta{
+    margin-top:4px;
+    font-size:11px;
+    color:rgba(243,234,215,0.55);
+  }
+
+  .sidebar-foot{
+    padding:16px 18px 20px;
+    border-top:1px solid rgba(243,234,215,0.12);
+    position:relative;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .foot-btn{
+    display:flex; align-items:center; gap:9px;
+    background:transparent;
+    border:1px solid rgba(243,234,215,0.18);
+    color:#f3ead7;
+    font-family:'Inter',sans-serif;
+    font-size:12.5px; font-weight:500;
+    padding:9px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .foot-btn:hover{ background:rgba(243,234,215,0.08); border-color:rgba(201,154,61,0.55);}
+  .mode-pill{
+    display:flex; align-items:center; gap:7px;
+    font-size:11px; color:rgba(243,234,215,0.5);
+    padding:2px 4px;
+  }
+  .mode-dot{width:7px;height:7px;border-radius:50%; background:var(--brass);}
+
+  /* ===== MAIN ===== */
+  .main{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    background:
+      linear-gradient(180deg, var(--parchment) 0%, var(--parchment) 100%);
+    position:relative;
+  }
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 30px;
+    border-bottom:1px solid var(--line);
+    background:var(--card);
+  }
+  .topbar-title{
+    font-family:'Fraunces',serif;
+    font-size:19px;
+    font-weight:600;
+  }
+  .topbar-title span{
+    display:block;
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;
+    font-weight:500;
+    color:var(--ink-soft);
+    letter-spacing:.3px;
+    margin-top:2px;
+  }
+  .topbar-actions{ display:flex; gap:10px; align-items:center;}
+  .icon-btn{
+    width:36px; height:36px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    color:var(--ink-soft);
+    transition:border-color .15s ease, color .15s ease, transform .15s;
+  }
+  .icon-btn:hover{ border-color:var(--brass); color:var(--navy); transform:translateY(-1px);}
+
+  /* ===== CHAT THREAD ===== */
+  .thread{
+    flex:1;
+    overflow-y:auto;
+    padding:28px 0 18px;
+  }
+  .thread-inner{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 26px;
+    display:flex; flex-direction:column; gap:22px;
+  }
+
+  .welcome{
+    text-align:center;
+    padding:40px 20px 18px;
+  }
+  .welcome-badge{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--teal);
+    background:var(--teal-soft);
+    padding:6px 13px; border-radius:30px;
+    margin-bottom:18px;
+  }
+  .welcome h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:30px;
+    margin:0 0 10px;
+    line-height:1.25;
+  }
+  .welcome p{
+    font-size:14.5px;
+    color:var(--ink-soft);
+    max-width:430px;
+    margin:0 auto;
+    line-height:1.65;
+  }
+  .chip-row{
+    display:flex; flex-wrap:wrap; gap:9px;
+    justify-content:center;
+    margin-top:24px;
+  }
+  .chip{
+    font-size:12.5px;
+    font-weight:500;
+    background:#fff;
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:9px 14px;
+    border-radius:20px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .chip:hover{ border-color:var(--brass); background:var(--parchment-deep);}
+
+  .msg-row{ display:flex; gap:12px; align-items:flex-start; }
+  .msg-row.user{ flex-direction:row-reverse; }
+
+  .avatar{
+    flex:none;
+    width:34px; height:34px;
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px;
+  }
+  .avatar.bot{ background:var(--navy); color:var(--brass-soft); }
+  .avatar.user{ background:var(--brass-soft); color:var(--navy-deep); font-weight:700; font-family:'Inter'; font-size:13px;}
+
+  .bubble-user{
+    background:var(--navy);
+    color:#fdf8ec;
+    padding:12px 16px;
+    border-radius:14px 14px 4px 14px;
+    font-size:14px;
+    line-height:1.55;
+    max-width:78%;
+  }
+
+  /* Boarding-pass styled assistant card */
+  .pass{
+    max-width:88%;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .pass-head{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--navy);
+    color:#f3ead7;
+    padding:9px 16px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+  }
+  .pass-head .tag{ color:var(--brass-soft); }
+  .pass-body{
+    padding:14px 18px 8px;
+    font-size:14px;
+    line-height:1.7;
+    color:var(--ink);
+    white-space:pre-wrap;
+  }
+  .pass-body strong{ color:var(--navy); }
+  .perforation{
+    position:relative;
+    height:0;
+    border-top:1.5px dashed var(--line);
+    margin:6px 0 0;
+  }
+  .perforation::before,.perforation::after{
+    content:"";
+    position:absolute; top:-7px;
+    width:14px; height:14px; border-radius:50%;
+    background:var(--parchment);
+    border:1px solid var(--line);
+  }
+  .perforation::before{ left:-25px; }
+  .perforation::after{ right:-25px; }
+  .pass-stub{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 18px 13px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .barcode{
+    display:flex; gap:2px; align-items:flex-end; height:20px;
+  }
+  .barcode i{ display:block; width:2px; background:var(--ink); opacity:.55; }
+  .feedback{
+    display:flex; gap:6px;
+  }
+  .fb-btn{
+    width:28px; height:28px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink-soft);
+    font-size:13px;
+    transition:all .15s ease;
+  }
+  .fb-btn:hover{ border-color:var(--teal); color:var(--teal); }
+  .fb-btn.active-up{ background:var(--teal); border-color:var(--teal); color:#fff; }
+  .fb-btn.active-down{ background:var(--coral); border-color:var(--coral); color:#fff; }
+  .fb-note{
+    font-family:'Inter',sans-serif;
+    font-size:10.5px;
+    color:var(--ink-soft);
+  }
+  .tr-btn{
+    width:auto; padding:0 9px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    display:flex; align-items:center; gap:5px;
+    color:var(--ink-soft);
+    font-size:11px; font-weight:500;
+    height:28px;
+    font-family:'Inter',sans-serif;
+    transition:all .15s ease;
+  }
+  .tr-btn:hover{ border-color:var(--brass); color:var(--navy); }
+  .tr-btn.active{ background:var(--brass-soft); border-color:var(--brass); color:var(--navy-deep); }
+  .tr-btn.loading{ opacity:.6; pointer-events:none; }
+  .pass-body[dir="rtl"]{ text-align:right; font-family:'Inter',sans-serif; }
+
+  .lang-row{
+    max-width:760px; margin:0 auto 10px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .lang-label{ font-size:11px; color:var(--ink-soft); margin-inline-end:4px; }
+  .lang-opt{
+    font-size:12px; font-weight:600;
+    padding:6px 14px;
+    border-radius:18px;
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    color:var(--ink-soft);
+    transition:all .15s ease;
+  }
+  .lang-opt.active{
+    background:var(--navy); border-color:var(--navy); color:#fdf8ec;
+  }
+
+  .typing{
+    display:flex; gap:4px; padding:14px 18px;
+  }
+  .typing span{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--brass);
+    animation:bounce 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2){ animation-delay:.15s; }
+  .typing span:nth-child(3){ animation-delay:.3s; }
+  @keyframes bounce{ 0%,80%,100%{ transform:translateY(0); opacity:.5;} 40%{ transform:translateY(-5px); opacity:1;} }
+
+  /* ===== COMPOSER ===== */
+  .composer-wrap{
+    padding:16px 26px 22px;
+    background:linear-gradient(180deg, rgba(247,242,232,0), var(--parchment) 30%);
+  }
+  .composer{
+    max-width:760px;
+    margin:0 auto;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:8px 8px 8px 18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .composer input{
+    flex:1;
+    border:none; outline:none;
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    background:transparent;
+    color:var(--ink);
+    padding:10px 0;
+  }
+  .composer input::placeholder{ color:#9aa3ad; }
+  .send-btn{
+    flex:none;
+    background:var(--navy);
+    color:#fdf8ec;
+    border:none;
+    width:42px; height:42px;
+    border-radius:11px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .send-btn:hover{ background:var(--navy-deep); transform:translateY(-1px); }
+  .composer-hint{
+    max-width:760px;
+    margin:9px auto 0;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  /* ===== SETTINGS DRAWER ===== */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(22,36,58,0.45);
+    backdrop-filter:blur(2px);
+    opacity:0; pointer-events:none;
+    transition:opacity .2s ease;
+    z-index:40;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .drawer{
+    position:fixed; top:0; right:-380px; bottom:0;
+    width:360px;
+    background:var(--card);
+    box-shadow:-20px 0 50px -20px rgba(22,36,58,0.4);
+    z-index:50;
+    transition:right .25s ease;
+    display:flex; flex-direction:column;
+  }
+  .drawer.show{ right:0; }
+  .drawer-head{
+    padding:22px 24px 16px;
+    border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:flex-start;
+  }
+  .drawer-head h3{
+    font-family:'Fraunces',serif;
+    margin:0 0 4px;
+    font-size:18px;
+  }
+  .drawer-head p{ margin:0; font-size:12px; color:var(--ink-soft); }
+  .drawer-close{
+    border:none; background:none; cursor:pointer; color:var(--ink-soft);
+    font-size:18px; line-height:1;
+  }
+  .drawer-body{ padding:18px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:20px;}
+  .field-label{
+    font-size:11.5px; font-weight:600; letter-spacing:.5px; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:8px; display:block;
+  }
+  .field-input{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:10px 12px;
+    font-size:13px;
+    font-family:'JetBrains Mono',monospace;
+    color:var(--ink);
+    background:var(--parchment);
+  }
+  .field-help{ font-size:11.5px; color:var(--ink-soft); margin-top:7px; line-height:1.6;}
+  .toggle-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--parchment);
+  }
+  .toggle-row .t-label{ font-size:13px; font-weight:500; }
+  .toggle-row .t-sub{ font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .switch{
+    position:relative; width:40px; height:22px; flex:none;
+  }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{
+    position:absolute; cursor:pointer; inset:0;
+    background:#cbbfa0; border-radius:22px;
+    transition:.2s;
+  }
+  .slider::before{
+    content:""; position:absolute; height:16px; width:16px; left:3px; bottom:3px;
+    background:white; border-radius:50%; transition:.2s;
+  }
+  input:checked + .slider{ background:var(--teal); }
+  input:checked + .slider::before{ transform:translateX(18px); }
+
+  .save-btn{
+    background:var(--navy); color:#fdf8ec; border:none;
+    padding:11px; border-radius:9px; font-size:13px; font-weight:600;
+    cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .save-btn:hover{ background:var(--navy-deep); }
+  .ghost-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-soft);
+    padding:10px; border-radius:9px; font-size:12.5px; cursor:pointer;
+  }
+  .ghost-btn:hover{ border-color:var(--coral); color:var(--coral); }
+
+  .stat-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  }
+  .stat-card{
+    border:1px solid var(--line); border-radius:10px; padding:12px;
+    background:var(--parchment);
+  }
+  .stat-num{ font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--navy);}
+  .stat-lab{ font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.6px; margin-top:2px;}
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--brass-soft); border-radius:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+
+  @media (max-width:760px){
+    .app{ grid-template-columns:1fr; }
+    .sidebar{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <circle cx="13" cy="13" r="12" stroke="#c99a3d" stroke-width="1.4"/>
+          <path d="M13 4 L13 22 M4 13 L22 13" stroke="#c99a3d" stroke-width="1" opacity="0.5"/>
+          <path d="M13 7 L17.5 13 L13 19 L8.5 13 Z" fill="#c99a3d"/>
+        </svg>
+        Safari
+      </div>
+      <div class="brand-sub">AI Stay Finder</div>
+    </div>
+
+    <div class="log-header">Trip Log</div>
+    <div class="stub-list" id="stubList">
+      <div class="stub-empty">Cities you ask about will appear here as boarding stubs.</div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="mode-pill"><span class="mode-dot" id="modeDot"></span><span id="modeLabel">Demo mode — sample results</span></div>
+      <button class="foot-btn" id="openSettings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005.6 15a1.65 1.65 0 00-1.51-1H4a2 2 0 010-4h.09A1.65 1.65 0 005.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+        Connect backend &amp; settings
+      </button>
+      <button class="foot-btn" id="clearChat">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a2 2 0 012-2h0a2 2 0 012 2v2"></path></svg>
+        Clear conversation
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">Ask about any stay
+        <span>Live hotel search, grounded in real listings</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="statsBtn" title="Feedback summary">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="M18 17V9M13 17V5M8 17v-3"></path></svg>
+        </button>
+        <button class="icon-btn" id="settingsBtn2" title="Settings">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005.6 15a1.65 1.65 0 00-1.51-1H4a2 2 0 010-4h.09A1.65 1.65 0 005.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="thread" id="thread">
+      <div class="thread-inner" id="threadInner">
+        <div class="welcome" id="welcomeBlock">
+          <div class="welcome-badge">● Retrieval-Augmented Search</div>
+          <h1>Where are you headed?</h1>
+          <p>Tell me a city, a budget, or what matters to you — a pool, breakfast, a view — and I'll pull real listings to match.</p>
+          <div class="chip-row">
+            <div class="chip" data-q="Find me a hotel in Cairo under $100 per night">Cairo, under $100</div>
+            <div class="chip" data-q="I need a luxury hotel in Paris with breakfast and a pool">Luxury in Paris</div>
+            <div class="chip" data-q="Show me well-rated hotels in Tokyo">Top-rated, Tokyo</div>
+            <div class="chip" data-q="Find budget hotels in Dubai under $80">Dubai, budget</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="lang-row">
+        <span class="lang-label">Reply in:</span>
+        <button class="lang-opt active" id="langAuto" data-lang="auto">Auto 🌐</button>
+        <button class="lang-opt" id="langAr" data-lang="ar">العربية</button>
+        <button class="lang-opt" id="langEn" data-lang="en">English</button>
+      </div>
+      <div class="composer">
+        <input type="text" id="msgInput" placeholder="e.g. Find me a quiet hotel in Rome near the centre…" />
+        <button class="send-btn" id="sendBtn" title="Ask">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+      <div class="composer-hint" id="composerHint">Demo mode is on — connect your backend in settings for live answers.</div>
+    </div>
+  </main>
+</div>
+
+<!-- ============ SETTINGS DRAWER ============ -->
+<div class="overlay" id="overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div>
+      <h3>Settings</h3>
+      <p>Connect your model and review feedback</p>
+    </div>
+    <button class="drawer-close" id="closeDrawer">✕</button>
+  </div>
+  <div class="drawer-body">
+
+    <div>
+      <label class="field-label">Backend URL (optional override)</label>
+      <input type="text" class="field-input" id="apiUrl" placeholder="Leave blank to use this site's own backend">
+      <div class="field-help">This page already talks to its own backend automatically — you don't need to set anything here. Only fill this in if you want to point the chat at a <em>different</em> deployment (e.g. a local server while developing).</div>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <div class="t-label">Demo mode</div>
+        <div class="t-sub">Use sample answers, no backend needed</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="demoToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div>
+      <label class="field-label">Feedback summary</label>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num" id="upCount">0</div><div class="stat-lab">Helpful</div></div>
+        <div class="stat-card"><div class="stat-num" id="downCount">0</div><div class="stat-lab">Needs work</div></div>
+      </div>
+    </div>
+
+    <button class="ghost-btn" id="exportFeedback">Export feedback as JSON</button>
+    <button class="save-btn" id="saveSettings">Save settings</button>
+    <button class="ghost-btn" id="resetAll">Reset everything</button>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'safari_state_v1';
+  const thread = document.getElementById('thread');
+  const threadInner = document.getElementById('threadInner');
+  const welcomeBlock = document.getElementById('welcomeBlock');
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const stubList = document.getElementById('stubList');
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('overlay');
+  const apiUrlInput = document.getElementById('apiUrl');
+  const demoToggle = document.getElementById('demoToggle');
+  const modeLabel = document.getElementById('modeLabel');
+  const modeDot = document.getElementById('modeDot');
+  const composerHint = document.getElementById('composerHint');
+  const upCountEl = document.getElementById('upCount');
+  const downCountEl = document.getElementById('downCount');
+
+  let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  // Empty apiUrl means "call this same page's origin" — correct by default since
+  // the FastAPI backend serves this HTML file itself. No setup needed for visitors.
+  state.apiUrl = state.apiUrl || '';
+  state.demoMode = state.demoMode !== undefined ? state.demoMode : false;
+  state.cities = state.cities || [];
+  state.feedback = state.feedback || []; // {id, query, up:bool}
+  state.lang = state.lang || 'auto';
+  let msgCounter = 0;
+
+  function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  function refreshModeUI(){
+    apiUrlInput.value = state.apiUrl;
+    demoToggle.checked = state.demoMode;
+    if(state.demoMode){
+      modeLabel.textContent = 'Demo mode — sample results';
+      modeDot.style.background = '#c99a3d';
+      composerHint.textContent = 'Demo mode is on — connect your backend in settings for live answers.';
+    } else {
+      modeLabel.textContent = state.apiUrl ? 'Connected to custom backend' : 'Connected';
+      modeDot.style.background = '#2f6f6b';
+      composerHint.textContent = state.apiUrl
+        ? 'Live mode — answers are coming from your custom backend URL.'
+        : 'Live mode — answers are coming from real hotel data.';
+    }
+  }
+
+  function renderStubs(){
+    if(state.cities.length === 0){
+      stubList.innerHTML = '<div class="stub-empty">Cities you ask about will appear here as boarding stubs.</div>';
+      return;
+    }
+    stubList.innerHTML = state.cities.slice().reverse().map(c => `
+      <div class="stub" data-city="${c.name}">
+        <div class="stub-top">
+          <span class="stub-city">${c.name}</span>
+          <span class="stub-code">${c.code}</span>
+        </div>
+        <div class="stub-meta">${c.count} ${c.count === 1 ? 'query' : 'queries'} · last asked ${c.last}</div>
+      </div>
+    `).join('');
+  }
+
+  function cityCode(name){
+    return name.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X');
+  }
+
+  function logCity(name){
+    if(!name) return;
+    const key = name.trim();
+    const existing = state.cities.find(c => c.name.toLowerCase() === key.toLowerCase());
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    if(existing){
+      existing.count += 1;
+      existing.last = timeStr;
+    } else {
+      state.cities.push({ name:key, code:cityCode(key), count:1, last:timeStr });
+    }
+    persist();
+    renderStubs();
+  }
+
+  function updateFeedbackCounts(){
+    const up = state.feedback.filter(f => f.up === true).length;
+    const down = state.feedback.filter(f => f.up === false).length;
+    upCountEl.textContent = up;
+    downCountEl.textContent = down;
+  }
+
+  function hideWelcome(){
+    if(welcomeBlock) welcomeBlock.style.display = 'none';
+  }
+
+  function scrollToBottom(){
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function addUserMessage(text){
+    hideWelcome();
+    const row = document.createElement('div');
+    row.className = 'msg-row user';
+    row.innerHTML = `
+      <div class="avatar user">You</div>
+      <div class="bubble-user"></div>
+    `;
+    row.querySelector('.bubble-user').textContent = text;
+    threadInner.appendChild(row);
+    scrollToBottom();
+  }
+
+  function addTyping(){
+    const row = document.createElement('div');
+    row.className = 'msg-row bot';
+    row.id = 'typingRow';
+    row.innerHTML = `
+      <div class="avatar bot">✈</div>
+      <div class="pass"><div class="typing"><span></span><span></span><span></span></div></div>
+    `;
+    threadInner.appendChild(row);
+    scrollToBottom();
+  }
+
+  function removeTyping(){
+    const t = document.getElementById('typingRow');
+    if(t) t.remove();
+  }
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function formatAnswer(text){
+    // bold **like this**, keep line breaks
+    return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function addBotMessage(text, cityLabel, lang){
+    hideWelcome();
+    msgCounter += 1;
+    const id = 'fb_' + Date.now() + '_' + msgCounter;
+    const row = document.createElement('div');
+    row.className = 'msg-row bot';
+    const isAr = lang === 'ar' || isArabicText(text);
+    row.innerHTML = `
+      <div class="avatar bot">✈</div>
+      <div class="pass">
+        <div class="pass-head">
+          <span>Safari · Stay Match</span>
+          <span class="tag">${cityLabel ? escapeHtml(cityLabel) : 'GENERAL'}</span>
+        </div>
+        <div class="pass-body" ${isAr ? 'dir="rtl"' : ''} data-original="${escapeHtml(text).replace(/"/g,'&quot;')}" data-current-lang="${isAr ? 'ar' : 'en'}">${formatAnswer(text)}</div>
+        <div class="perforation"></div>
+        <div class="pass-stub">
+          <div class="barcode">${barcode()}</div>
+          <div class="feedback">
+            <button class="tr-btn" data-id="${id}" title="Translate">🌐 <span class="tr-label">${isAr ? 'EN' : 'AR'}</span></button>
+            <span class="fb-note">Was this helpful?</span>
+            <button class="fb-btn" data-id="${id}" data-val="up" title="Helpful">👍</button>
+            <button class="fb-btn" data-id="${id}" data-val="down" title="Needs work">👎</button>
+          </div>
+        </div>
+      </div>
+    `;
+    threadInner.appendChild(row);
+    scrollToBottom();
+  }
+
+  function barcode(){
+    let bars = '';
+    for(let i=0;i<22;i++){
+      const h = 8 + Math.floor(Math.random()*12);
+      const w = Math.random() > 0.7 ? 3 : 2;
+      bars += `<i style="height:${h}px;width:${w}px"></i>`;
+    }
+    return bars;
+  }
+
+  // Feedback + translate click handling (event delegation)
+  threadInner.addEventListener('click', async function(e){
+    const trBtn = e.target.closest('.tr-btn');
+    if(trBtn){
+      const body = trBtn.closest('.pass').querySelector('.pass-body');
+      const original = body.dataset.original;
+      const currentLang = body.dataset.currentLang;
+      if(trBtn.classList.contains('active')){
+        // toggle back to original
+        body.innerHTML = formatAnswer(original);
+        body.removeAttribute('dir');
+        body.dataset.currentLang = isArabicText(original) ? 'ar' : 'en';
+        trBtn.classList.remove('active');
+        trBtn.querySelector('.tr-label').textContent = isArabicText(original) ? 'EN' : 'AR';
+        return;
+      }
+      const targetLang = currentLang === 'ar' ? 'en' : 'ar';
+      trBtn.classList.add('loading');
+      try{
+        const translated = await translateText(original, currentLang, targetLang);
+        body.innerHTML = formatAnswer(translated);
+        if(targetLang === 'ar') body.setAttribute('dir','rtl');
+        else body.removeAttribute('dir');
+        body.dataset.currentLang = targetLang;
+        trBtn.classList.add('active');
+        trBtn.querySelector('.tr-label').textContent = targetLang === 'ar' ? 'EN' : 'AR';
+      }catch(err){
+        alert('Translation failed: ' + err.message);
+      }finally{
+        trBtn.classList.remove('loading');
+      }
+      return;
+    }
+
+    const btn = e.target.closest('.fb-btn');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    const val = btn.dataset.val === 'up';
+    const group = btn.closest('.feedback').querySelectorAll('.fb-btn');
+    group.forEach(b => b.classList.remove('active-up','active-down'));
+    btn.classList.add(val ? 'active-up' : 'active-down');
+
+    const existingIdx = state.feedback.findIndex(f => f.id === id);
+    const record = { id, up: val, time: new Date().toISOString() };
+    if(existingIdx > -1) state.feedback[existingIdx] = record;
+    else state.feedback.push(record);
+    persist();
+    updateFeedbackCounts();
+  });
+
+  async function translateText(text, fromLang, toLang){
+    // Free, no-key translation endpoint (MyMemory). Good enough for demo/UI-level translation.
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('status ' + res.status);
+    const data = await res.json();
+    if(!data.responseData || !data.responseData.translatedText) throw new Error('no translation returned');
+    return data.responseData.translatedText;
+  }
+
+  // ---- Demo answer bank ----
+  const DEMO_BANK = {
+    cairo: "**Cairo Pearl Hotel** — $72/night · ★4.3 (812 reviews)\nFree WiFi, breakfast included, rooftop terrace with Nile views.\n\n**Nile Budget Inn** — $58/night · ★4.0 (340 reviews)\nClean, central, walking distance to the Egyptian Museum.\n\n**Giza View Suites** — $95/night · ★4.5 (1,204 reviews)\nPool, airport shuttle, and a balcony facing the pyramids.\n\nAll three are under your $100 budget — the Giza View Suites edges out on rating if you can stretch the spend slightly.",
+    paris: "**Le Marais Boutique** — $310/night · ★4.7 (2,140 reviews)\nRooftop pool, full breakfast buffet, walking distance to the Louvre.\n\n**Hôtel Saint-Germain Royale** — $285/night · ★4.6 (1,860 reviews)\nIndoor pool, Michelin-adjacent restaurant, antique furnishings.\n\n**Champs Élysées Grand** — $340/night · ★4.8 (980 reviews)\nSpa, heated pool, and a breakfast spread that includes fresh croissants from the in-house bakery.\n\nFor luxury with breakfast and a pool, Champs Élysées Grand has the strongest rating, while Le Marais Boutique gives you the best location-to-price balance.",
+    tokyo: "**Shinjuku Sky Tower** — $145/night · ★4.8 (3,402 reviews)\nPanoramic city views, onsen-style bath, excellent service ratings.\n\n**Asakusa Heritage Inn** — $98/night · ★4.7 (2,210 reviews)\nTraditional ryokan touches, steps from Senso-ji Temple.\n\n**Ginza Modern Suites** — $210/night · ★4.9 (1,560 reviews)\nHighest-rated of the three — sleek design, rooftop bar, prime shopping district.\n\nIf top ratings matter most, Ginza Modern Suites leads at 4.9 stars.",
+    dubai: "**Deira Budget Stay** — $62/night · ★4.1 (640 reviews)\nFree breakfast, metro-adjacent, simple but clean rooms.\n\n**Al Barsha Comfort Inn** — $74/night · ★4.2 (505 reviews)\nPool, gym, and shuttle to Mall of the Emirates.\n\n**Bur Dubai Inn** — $79/night · ★4.0 (380 reviews)\nCentral location, rooftop seating, walking distance to the Creek.\n\nAll three sit comfortably under $80 — Al Barsha Comfort Inn offers the best amenities-to-price ratio."
+  };
+
+  const DEMO_BANK_AR = {
+    cairo: "**فندق كايرو بيرل** — 72$ في الليلة · ★4.3 (812 تقييم)\nواي فاي مجاني، فطار شامل، تراس على سطح المبنى بإطلالة على النيل.\n\n**نايل بدجت إن** — 58$ في الليلة · ★4.0 (340 تقييم)\nنظيف، في وسط البلد، قريب من المتحف المصري.\n\n**جيزة فيو سويتس** — 95$ في الليلة · ★4.5 (1,204 تقييم)\nحمام سباحة، أتوبيس من المطار، وبلكونة بإطلالة على الأهرامات.\n\nالتلاتة فنادق في حدود الـ100$، وجيزة فيو سويتس أعلاهم تقييمًا لو الميزانية تسمح بزيادة بسيطة.",
+    paris: "**لو ماريه بوتيك** — 310$ في الليلة · ★4.7 (2,140 تقييم)\nحمام سباحة على السطح، بوفيه فطار كامل، قريب من متحف اللوفر.\n\n**أوتيل سان جيرمان رويال** — 285$ في الليلة · ★4.6 (1,860 تقييم)\nحمام سباحة داخلي، مطعم فاخر، وديكور أنتيك.\n\n**شانزليزيه جراند** — 340$ في الليلة · ★4.8 (980 تقييم)\nسبا، حمام سباحة مدفأ، وفطار فيه كرواسون طازة من المخبز الداخلي.\n\nلو عايزة فخامة مع فطار وحمام سباحة، شانزليزيه جراند أعلى تقييمًا، أما لو الموقع والسعر أهم، لو ماريه أفضل توازن.",
+    tokyo: "**شينجوكو سكاي تاور** — 145$ في الليلة · ★4.8 (3,402 تقييم)\nإطلالة بانورامية على المدينة، حمام أونسن، وخدمة ممتازة.\n\n**أساكوسا هيريتدج إن** — 98$ في الليلة · ★4.7 (2,210 تقييم)\nطابع ياباني تقليدي، على بعد خطوات من معبد سينسوجي.\n\n**جينزا مودرن سويتس** — 210$ في الليلة · ★4.9 (1,560 تقييم)\nأعلى تقييم بين التلاتة — تصميم عصري، بار على السطح، وموقع وسط منطقة التسوق.\n\nلو الأهم بالنسبالك التقييم، جينزا مودرن سويتس في المقدمة بـ4.9 نجوم.",
+    dubai: "**ديرة بدجت ستاي** — 62$ في الليلة · ★4.1 (640 تقييم)\nفطار مجاني، قريب من المترو، غرف بسيطة ونظيفة.\n\n**البرشاء كومفورت إن** — 74$ في الليلة · ★4.2 (505 تقييم)\nحمام سباحة، جيم، وأتوبيس لمول الإمارات.\n\n**بر دبي إن** — 79$ في الليلة · ★4.0 (380 تقييم)\nموقع مركزي، جلسة على السطح، وقريب من الخور.\n\nالتلاتة تحت الـ80$، والبرشاء كومفورت إن أحسنهم في التوازن بين الخدمات والسعر."
+  };
+
+  function extractCityGuess(text){
+    const lower = text.toLowerCase();
+    for(const key of Object.keys(DEMO_BANK)){
+      if(lower.includes(key)) return key;
+    }
+    const m = text.match(/in\s+([A-Za-z\s]+?)(\.|,|$|\s+with|\s+under|\s+near)/i);
+    return m ? m[1].trim() : null;
+  }
+
+  function isArabicText(text){
+    return /[\u0600-\u06FF]/.test(text);
+  }
+
+  function demoAnswer(text){
+    const key = extractCityGuess(text);
+    let lang = state.lang || 'auto';
+    if(lang === 'auto') lang = isArabicText(text) ? 'ar' : 'en';
+    const bank = lang === 'ar' ? DEMO_BANK_AR : DEMO_BANK;
+
+    if(key && bank[key]) return { city: key, answer: bank[key], lang };
+    if(key){
+      const msg = lang === 'ar'
+        ? `معنديش بيانات تجريبية لمدينة **${capitalize(key)}** دلوقتي في وضع الديمو. لما الـ backend الحقيقي يتوصل، هنا بالظبط هيجيب بيانات فنادق حية لـ ${capitalize(key)} ويرد عليكي منها.`
+        : `I don't have sample listings loaded for **${capitalize(key)}** in demo mode. Once your backend is connected, this is exactly the moment it would scrape live hotel data for ${capitalize(key)} and answer from real listings.`;
+      return { city: key, answer: msg, lang };
+    }
+    const msg = lang === 'ar'
+      ? 'مش لاقياكي حددتي اسم مدينة في رسالتك. جربي تكتبي اسم مدينة، مثلاً: "فنادق في لشبونة أقل من 120 دولار".'
+      : "I couldn't spot a city in that message. Try naming a destination — for example, \"hotels in Lisbon under $120\".";
+    return { city: null, answer: msg, lang };
+}
+
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // History kept locally — backend is stateless per call
+  let conversationHistory = [];
+
+  async function callBackend(text){
+    // If an override URL is set (e.g. testing against a different deployment),
+    // use it. Otherwise call this same origin's /ask — always correct here,
+    // since FastAPI serves this page and the API from the same Space.
+    const base = state.apiUrl ? state.apiUrl.replace(/\/$/, '') : '';
+    const endpoint = base + '/ask';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: text, history: conversationHistory})
+    });
+    if(!res.ok) throw new Error('Server ' + res.status + ': ' + await res.text());
+    const data = await res.json();
+    conversationHistory.push({role:'user', content:text});
+    conversationHistory.push({role:'assistant', content:data.answer});
+    return data.answer;
+  }
+
+  async function handleSend(){
+    const text = msgInput.value.trim();
+    if(!text) return;
+    msgInput.value = '';
+    addUserMessage(text);
+    addTyping();
+
+    if(state.demoMode){
+      await new Promise(r => setTimeout(r, 650 + Math.random()*500));
+      const { city, answer, lang } = demoAnswer(text);
+      removeTyping();
+      addBotMessage(answer, city ? capitalize(city) : null, lang);
+      if(city) logCity(capitalize(city));
+      return;
+    }
+
+    try{
+      const answer = await callBackend(text);
+      removeTyping();
+      addBotMessage(answer, null, isArabicText(answer) ? 'ar' : 'en');
+      const guess = extractCityGuess(text);
+      if(guess) logCity(capitalize(guess));
+    }catch(err){
+      removeTyping();
+      conversationHistory = []; // reset history so next attempt starts fresh
+      addBotMessage("⚠️ I couldn't reach the backend (" + err.message + "). The server may be waking up from sleep or temporarily unavailable — please try again in a moment.", null, 'en');
+    }
+  }
+
+  sendBtn.addEventListener('click', handleSend);
+  msgInput.addEventListener('keydown', e => { if(e.key === 'Enter') handleSend(); });
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      msgInput.value = chip.dataset.q;
+      handleSend();
+    });
+  });
+
+  // ---- Drawer ----
+  function openDrawer(){ drawer.classList.add('show'); overlay.classList.add('show'); }
+  function closeDrawerFn(){ drawer.classList.remove('show'); overlay.classList.remove('show'); }
+  document.getElementById('openSettings').addEventListener('click', openDrawer);
+  document.getElementById('settingsBtn2').addEventListener('click', openDrawer);
+  document.getElementById('statsBtn').addEventListener('click', openDrawer);
+  document.getElementById('closeDrawer').addEventListener('click', closeDrawerFn);
+  overlay.addEventListener('click', closeDrawerFn);
+
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    const newUrl = apiUrlInput.value.trim();
+    if(newUrl !== state.apiUrl){
+      conversationHistory = []; // reset when URL changes
+    }
+    state.apiUrl = newUrl;
+    state.demoMode = demoToggle.checked;
+    persist();
+    refreshModeUI();
+    closeDrawerFn();
+  });
+
+  document.getElementById('exportFeedback').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(state.feedback, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'safari-feedback.json';
+    a.click();
+  });
+
+  document.getElementById('clearChat').addEventListener('click', () => {
+    threadInner.innerHTML = '';
+    threadInner.appendChild(welcomeBlock);
+    welcomeBlock.style.display = 'block';
+    conversationHistory = []; // reset history on clear
+  });
+
+  document.getElementById('resetAll').addEventListener('click', () => {
+    if(confirm('This clears saved settings, trip log and feedback. Continue?')){
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  });
+
+  document.querySelectorAll('.lang-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.lang = btn.dataset.lang;
+      persist();
+      document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // init
+  refreshModeUI();
+  renderStubs();
+  updateFeedbackCounts();
+  document.querySelectorAll('.lang-opt').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === state.lang);
+  });
+})();
+</script>
+</body>
+</html>

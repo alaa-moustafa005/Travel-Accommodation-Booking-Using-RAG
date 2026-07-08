@@ -1,0 +1,22 @@
+# Web framework
+fastapi
+uvicorn[standard]
+pydantic
+
+# Secrets loading (local .env support)
+python-dotenv
+
+# LangChain core + integrations
+langchain
+langchain-core
+langchain-text-splitters
+langchain-community
+langchain-chroma
+langchain-nvidia-ai-endpoints
+
+# Vector store + embeddings
+chromadb
+sentence-transformers
+
+# Live hotel data
+google-search-results
