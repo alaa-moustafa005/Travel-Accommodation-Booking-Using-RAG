@@ -17,4 +17,4 @@ jobs:
       - name: Push to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push https://omaaarrrr:$HF_TOKEN@huggingface.co/spaces/omaaarrrr/safarii main
+        run: git push https://omaaarrrr:$HF_TOKEN@huggingface.co/spaces/omaaarrrr/safarii.git main
