@@ -17,4 +17,8 @@ jobs:
       - name: Push to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push https://omaaarrrr:$HF_TOKEN@huggingface.co/spaces/omaaarrrr/safarii.git main
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git remote add hf https://omaaarrrr:$HF_TOKEN@huggingface.co/spaces/omaaarrrr/safarii.git || true
+          git push -f hf main
