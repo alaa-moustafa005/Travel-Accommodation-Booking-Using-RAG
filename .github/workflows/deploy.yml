@@ -1,33 +1,16 @@
-name: Deploy to Hugging Face
+- name: Push to Hugging Face
+  env:
+    HF_TOKEN: ${{ secrets.HF_TOKEN }}
+  run: |
+    git config --global user.email "github-actions@github.com"
+    git config --global user.name "GitHub Actions"
 
-on:
-  push:
-    branches:
-      - main
+    git clone https://oauth2:${HF_TOKEN}@huggingface.co/spaces/mohamedachraf/Safari-RAG-Chatbot space
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    rsync -av --delete --exclude=".git" ./ space/
 
-    steps:
-      - uses: actions/checkout@v4
+    cd space
 
-      - name: Push to Hugging Face
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-
-        run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
-
-          git clone "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/mohamedachraf/Safari-RAG-Chatbot" space
-
-          rsync -av --delete --exclude=".git" ./ space/
-
-          cd space
-
-          git add .
-
-          git commit -m "Auto deploy"
-
-          git push
+    git add .
+    git commit -m "Auto deploy" || echo "No changes"
+    git push
