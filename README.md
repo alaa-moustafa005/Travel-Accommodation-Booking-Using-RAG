@@ -159,5 +159,5 @@ Open `http://localhost:8000` in your browser.
 
 ## Author
 
-Built by Omar as a graduation project for the DEPI Data Engineering & AI
+Built by Omar as a graduation project for the DEPI Machine Learning Track
 track.
