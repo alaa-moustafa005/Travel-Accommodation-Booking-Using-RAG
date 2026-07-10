@@ -5,7 +5,7 @@ natural-language hotel search questions using **live, real hotel listings**
 rather than a static or hallucinated dataset. Built as a graduation project
 for the DEPI Data Engineering & AI track.
 
-**Live demo:** https://omaaarrrr-safari.hf.space/
+**Live demo:** https://huggingface.co/spaces/omaaarrrr/safarii
 
 ---
 
